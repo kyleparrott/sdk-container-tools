@@ -24,11 +24,11 @@
 import argparse
 import json
 import os
-import subprocess
 import sys
 import urllib2
 import xml.etree.ElementTree as ET
 
+from distutils.dir_util import copy_tree
 from yotta import build, init, target, link, link_target
 from yotta.lib import component, globalconf
 
@@ -78,15 +78,23 @@ def main():
 
 def _init(name):
     print 'Initializing project: %s ...' % name
-    kubos_rt_repo_path = "".join([org_name, '/', kubos_rt, '#', kubos_rt_branch])
-    c = component.Component(os.getcwd())
-    c.description['name'] = name
-    c.description['bin'] = './source'
-    c.description['dependencies'] = {
-        'kubos-rt' : kubos_rt_repo_path
-    }
-    c.description['homepage'] = 'https://<homepage>'
-    init.initNonInteractive(None, c)
+    container_source_dir = os.path.join('/', 'examples', 'kubos-rt-example')
+    local_source_dir = os.path.join(os.getcwd(), 'source')
+    proj_name_dir = os.path.join(os.getcwd(), name)
+
+    if os.path.isdir(local_source_dir):
+        print >>sys.stderr, 'Source directory already exists. Not overwritting the current directory'
+        sys.exit(1)
+
+    copy_tree(container_source_dir, os.getcwd())
+    #change project name in module.json
+    module_json = os.path.join(os.getcwd(), 'module.json')
+    with open(module_json, 'r') as init_module_json:
+        module_data = json.load(init_module_json)
+    module_data['name'] = name
+    with open(module_json, 'w') as final_module_json:
+        str_module_data = json.dumps(module_data)
+        final_module_json.write(str_module_data)
 
 
 def _build(unknown_args):
