@@ -150,14 +150,21 @@ def set_target(new_target):
 
     if new_target in available_target_list:
         globalconf.set('plain', False)
-        link_target_args = argparse.Namespace(target_or_path=new_target,
+        for linked_target in available_target_list:
+            link_target_args = argparse.Namespace(target_or_path=linked_target,
+                                                  config=None,
+                                                  target=linked_target,
+                                                  set_target=linked_target,
+                                                  save_global=False,
+                                                  no_install=False)
+            link_target.execCommand(link_target_args, '')
+        new_target_args = argparse.Namespace(target_or_path=new_target,
                                               config=None,
                                               target=new_target,
                                               set_target=new_target,
                                               save_global=False,
                                               no_install=False)
-        link_target.execCommand(link_target_args, '')
-        target.execCommand(link_target_args, '')
+        target.execCommand(new_target_args, '')
     else:
         if new_target != '':
             print >>sys.stderr, 'Error: Requested target %s not available. Available targets are:\n' % new_target
