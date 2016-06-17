@@ -46,7 +46,7 @@ original_check_value = argparse.ArgumentParser._check_value
 
 def main():
     argparse.ArgumentParser._check_value = kubos_check_value
-    parser    = argparse.ArgumentParser('kubos')
+    parser    = argparse.ArgumentParser('kubos-sdk')
     subparser = parser.add_subparsers(dest='command')
 
     init_parser   = subparser.add_parser('init')
@@ -63,7 +63,7 @@ def main():
     globalconf.set('interactive', False)
 
     command = provided_args['command']
-    elif command == 'init':
+    if command == 'init':
         proj_name = provided_args['proj_name'][0]
         _init(proj_name)
     elif command == 'target':
@@ -90,20 +90,21 @@ def _init(name):
 
 
 def _build(unknown_args):
-    local_link_deps()
+    link_std_modules()
+    link_mounted_modules()
+
     globalconf.set('plain', False)
     current_target = get_current_target()
 
-    if target:
-        args = argparse.Namespace(config=None,
-                                  cmake_generator='Ninja',
-                                  debug=None,
-                                  generate_only=False,
-                                  interactive=False,
-                                  target=current_target,
-                                  plain=False,
-                                  release_build=True,
-                                  registry=None)
+    args = argparse.Namespace(config=None,
+                              cmake_generator='Ninja',
+                              debug=None,
+                              generate_only=False,
+                              interactive=False,
+                              target=current_target,
+                              plain=False,
+                              release_build=True,
+                              registry=None)
 
     build_status = build.installAndBuild(args, unknown_args)
 
@@ -170,7 +171,7 @@ def get_current_target():
         return None
 
 
-def local_link_deps():
+def link_std_modules():
     root_module_path = os.path.join('/','usr', 'local', 'lib', 'yotta_modules')
     for subdir in os.listdir(root_module_path):
         module_json = os.path.join(root_module_path, subdir, 'module.json')
@@ -181,6 +182,36 @@ def local_link_deps():
                                        config=None,
                                        target=get_current_target())
         link.execCommand(link_args, None)
+
+
+def link_mounted_modules(): # Globally link the dev modules to replace the standard modules
+    cur_dir = os.getcwd()
+    link_file = os.path.join(cur_dir, '.kubos-link.json')
+    link_args = argparse.Namespace(module_or_path=None,
+                                   config=None,
+                                   target=None)
+
+    if os.path.isfile(link_file):
+        with open(link_file, 'r') as dev_links:
+            link_data = json.load(dev_links)
+
+        for key in link_data:
+            module_path = link_data[key]
+            os.chdir(module_path)
+            link.execCommand(link_args, None)
+    os.chdir(cur_dir)
+
+
+# Temporarily override the argparse error handler that deals with undefined subcommands
+# to allow these subcommands to be passed to yotta. Before calling yotta
+# the error handler is set back to the standard argparse handler.
+
+def kubos_check_value(self, action, value):
+    if action.choices is not None and value not in action.choices:
+        argparse.ArgumentParser._check_value = original_check_value
+        link_mounted_modules() #Prints proper 
+        import yotta
+        yotta.main()
 
 
 if __name__ == '__main__':
