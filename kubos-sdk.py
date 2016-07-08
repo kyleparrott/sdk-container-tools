@@ -16,7 +16,7 @@
 # limitations under the License.
 
 
-# This is the kubos-sdk "target" script that is executed inside the kubostech/kubos-sdk 
+# This is the kubos-sdk "target" script that is executed inside the kubostech/kubos-sdk
 # docker container image. The project directory on the host is mounted
 # into a container instance, then this script executed commands such as: build, init and target
 # against the project directory.
@@ -29,6 +29,8 @@ import urllib2
 import xml.etree.ElementTree as ET
 
 from distutils.dir_util import copy_tree
+import shutil
+import stat
 from yotta import build, init, target, link, link_target
 from yotta.lib import component, globalconf
 
@@ -86,12 +88,14 @@ def _init(name):
         print >>sys.stderr, 'Source directory already exists. Not overwritting the current directory'
         sys.exit(1)
 
-    copy_tree(container_source_dir, os.getcwd())
+    copytree(container_source_dir, os.getcwd(), ignore=shutil.ignore_patterns(".git"))
     #change project name in module.json
     module_json = os.path.join(os.getcwd(), 'module.json')
     with open(module_json, 'r') as init_module_json:
         module_data = json.load(init_module_json)
     module_data['name'] = name
+    module_data['repository']['url'] = ''
+    module_data['homepage'] = ''
     with open(module_json, 'w') as final_module_json:
         str_module_data = json.dumps(module_data)
         final_module_json.write(str_module_data)
@@ -122,7 +126,7 @@ def _build(unknown_args):
         print '\nBuild Failed'
 
 
-def show_target(): 
+def show_target():
     current_target = get_current_target()
     if current_target:
         target_args = argparse.Namespace(plain=False,
@@ -224,11 +228,36 @@ def link_mounted_modules(): # Globally link the dev modules to replace the stand
 def kubos_check_value(self, action, value):
     if action.choices is not None and value not in action.choices:
         argparse.ArgumentParser._check_value = original_check_value
-        link_mounted_modules() #Prints proper 
+        link_mounted_modules() #Prints proper
         import yotta
         yotta.main()
 
+#Allows for copying into existing directory for shutil
+def copytree(src, dst, symlinks = False, ignore = None):
+  if not os.path.exists(dst):
+    os.makedirs(dst)
+    shutil.copystat(src, dst)
+  lst = os.listdir(src)
+  if ignore:
+    excl = ignore(src, lst)
+    lst = [x for x in lst if x not in excl]
+  for item in lst:
+    s = os.path.join(src, item)
+    d = os.path.join(dst, item)
+    if symlinks and os.path.islink(s):
+      if os.path.lexists(d):
+        os.remove(d)
+      os.symlink(os.readlink(s), d)
+      try:
+        st = os.lstat(s)
+        mode = stat.S_IMODE(st.st_mode)
+        os.lchmod(d, mode)
+      except:
+        pass # lchmod not available
+    elif os.path.isdir(s):
+      copytree(s, d, symlinks, ignore)
+    else:
+      shutil.copy2(s, d)
 
 if __name__ == '__main__':
     main()
-
