@@ -24,13 +24,12 @@
 import argparse
 import json
 import os
+import shutil
 import sys
 import urllib2
 import xml.etree.ElementTree as ET
 
 from distutils.dir_util import copy_tree
-import shutil
-import stat
 from yotta import build, init, target, link, link_target
 from yotta.lib import component, globalconf
 
@@ -88,7 +87,7 @@ def _init(name):
         print >>sys.stderr, 'Source directory already exists. Not overwritting the current directory'
         sys.exit(1)
 
-    shutil.copytree(container_source_dir, proj_name_dir, ignore=shutil.ignore_patterns(".git"))
+    shutil.copytree(container_source_dir, proj_name_dir, ignore=shutil.ignore_patterns('.git'))
     #change project name in module.json
     module_json = os.path.join(proj_name_dir, 'module.json')
     with open(module_json, 'r') as init_module_json:
