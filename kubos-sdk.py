@@ -16,7 +16,7 @@
 # limitations under the License.
 
 
-# This is the kubos-sdk "target" script that is executed inside the kubostech/kubos-sdk 
+# This is the kubos-sdk "target" script that is executed inside the kubostech/kubos-sdk
 # docker container image. The project directory on the host is mounted
 # into a container instance, then this script executed commands such as: build, init and target
 # against the project directory.
@@ -24,6 +24,7 @@
 import argparse
 import json
 import os
+import shutil
 import sys
 import urllib2
 import xml.etree.ElementTree as ET
@@ -86,12 +87,14 @@ def _init(name):
         print >>sys.stderr, 'Source directory already exists. Not overwritting the current directory'
         sys.exit(1)
 
-    copy_tree(container_source_dir, os.getcwd())
+    shutil.copytree(container_source_dir, proj_name_dir, ignore=shutil.ignore_patterns('.git'))
     #change project name in module.json
-    module_json = os.path.join(os.getcwd(), 'module.json')
+    module_json = os.path.join(proj_name_dir, 'module.json')
     with open(module_json, 'r') as init_module_json:
         module_data = json.load(init_module_json)
     module_data['name'] = name
+    module_data['repository']['url'] = ''
+    module_data['homepage'] = ''
     with open(module_json, 'w') as final_module_json:
         str_module_data = json.dumps(module_data)
         final_module_json.write(str_module_data)
@@ -122,7 +125,7 @@ def _build(unknown_args):
         print '\nBuild Failed'
 
 
-def show_target(): 
+def show_target():
     current_target = get_current_target()
     if current_target:
         target_args = argparse.Namespace(plain=False,
@@ -224,11 +227,9 @@ def link_mounted_modules(): # Globally link the dev modules to replace the stand
 def kubos_check_value(self, action, value):
     if action.choices is not None and value not in action.choices:
         argparse.ArgumentParser._check_value = original_check_value
-        link_mounted_modules() #Prints proper 
+        link_mounted_modules() #Prints proper
         import yotta
         yotta.main()
 
-
 if __name__ == '__main__':
     main()
-
