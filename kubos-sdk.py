@@ -23,6 +23,7 @@
 
 import argparse
 import json
+import logging
 import os
 import shutil
 import sys
@@ -94,7 +95,7 @@ def _init(name):
         module_data = json.load(init_module_json)
     module_data['name'] = name
     module_data['repository']['url'] = ''
-    module_data['homepage'] = ''
+    module_data['homepage'] = 'https://' # Without this set Yotta prints ugly warning messages
     with open(module_json, 'w') as final_module_json:
         str_module_data = json.dumps(module_data,
                                      indent=4,
@@ -105,19 +106,17 @@ def _init(name):
 def _build(unknown_args):
     link_std_modules()
     link_mounted_modules()
-
-    globalconf.set('plain', False)
     current_target = get_current_target()
-
+    globalconf.set('plain', False)
     args = argparse.Namespace(config=None,
-                              cmake_generator='Ninja',
-                              debug=None,
-                              generate_only=False,
-                              interactive=False,
-                              target=current_target,
-                              plain=False,
-                              release_build=True,
-                              registry=None)
+                          cmake_generator='Ninja',
+                          debug=None,
+                          generate_only=False,
+                          interactive=False,
+                          target=current_target,
+                          plain=False,
+                          release_build=True,
+                          registry=None)
 
     build_status = build.installAndBuild(args, unknown_args)
 
@@ -140,9 +139,34 @@ def show_target():
 
 
 def set_target(new_target):
+    available_target_list = get_target_list()
     if new_target != '':
         print 'Setting Target: %s' % new_target.split('@')[0]
 
+        if new_target in available_target_list:
+            globalconf.set('plain', False)
+            link_global_targets()
+            new_target_args = argparse.Namespace(target_or_path=new_target,
+                                                  config=None,
+                                                  target=new_target,
+                                                  set_target=new_target,
+                                                  save_global=False,
+                                                  no_install=False)
+            target.execCommand(new_target_args, '')
+            link_std_modules()
+            link_mounted_modules()
+            print '\nTarget Successfully Set to: %s' % new_target
+    else:
+        if new_target != '':
+            print >>sys.stderr, 'Error: Requested target %s not available. Available targets are:\n' % new_target
+        else:
+            print >>sys.stderr, 'Available targets are:\n'
+        for _target in available_target_list:
+            print >>sys.stderr, _target
+        sys.exit(1)
+
+
+def get_target_list():
     global_target_pth = os.path.join('/', 'usr', 'lib', 'yotta_targets')
     target_list = os.listdir(global_target_pth)
     available_target_list = []
@@ -152,32 +176,21 @@ def set_target(new_target):
         with open(target_json, 'r') as json_file:
             data = json.load(json_file)
             available_target_list.append(data['name'])
+    return available_target_list
 
-    if new_target in available_target_list:
-        globalconf.set('plain', False)
-        for linked_target in available_target_list:
-            link_target_args = argparse.Namespace(target_or_path=linked_target,
-                                                  config=None,
-                                                  target=linked_target,
-                                                  set_target=linked_target,
-                                                  save_global=False,
-                                                  no_install=False)
-            link_target.execCommand(link_target_args, '')
-        new_target_args = argparse.Namespace(target_or_path=new_target,
+
+def link_global_targets():
+    logging.disable(logging.WARNING)
+    target_list = get_target_list()
+    for linked_target in target_list:
+        link_target_args = argparse.Namespace(target_or_path=linked_target,
                                               config=None,
-                                              target=new_target,
-                                              set_target=new_target,
+                                              target=linked_target,
+                                              set_target=linked_target,
                                               save_global=False,
                                               no_install=False)
-        target.execCommand(new_target_args, '')
-    else:
-        if new_target != '':
-            print >>sys.stderr, 'Error: Requested target %s not available. Available targets are:\n' % new_target
-        else:
-            print >>sys.stderr, 'Available targets are:\n'
-        for _target in available_target_list:
-            print >>sys.stderr, _target
-        sys.exit(1)
+        link_target.execCommand(link_target_args, '')
+    logging.enable(logging.WARNING)
 
 
 def get_current_target():
@@ -192,6 +205,7 @@ def get_current_target():
 
 
 def link_std_modules():
+    logging.disable(logging.WARNING)
     root_module_path = os.path.join('/','usr', 'local', 'lib', 'yotta_modules')
     for subdir in os.listdir(root_module_path):
         module_json = os.path.join(root_module_path, subdir, 'module.json')
@@ -202,6 +216,7 @@ def link_std_modules():
                                        config=None,
                                        target=get_current_target())
         link.execCommand(link_args, None)
+    logging.enable(logging.WARNING)
 
 
 def link_mounted_modules(): # Globally link the dev modules to replace the standard modules
@@ -232,6 +247,7 @@ def kubos_check_value(self, action, value):
         link_mounted_modules() #Prints proper
         import yotta
         yotta.main()
+
 
 if __name__ == '__main__':
     main()
