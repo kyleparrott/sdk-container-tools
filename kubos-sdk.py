@@ -96,7 +96,9 @@ def _init(name):
     module_data['repository']['url'] = ''
     module_data['homepage'] = ''
     with open(module_json, 'w') as final_module_json:
-        str_module_data = json.dumps(module_data)
+        str_module_data = json.dumps(module_data,
+                                     indent=4,
+                                     separators=(':', ','))
         final_module_json.write(str_module_data)
 
 
