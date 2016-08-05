@@ -140,30 +140,29 @@ def show_target():
 
 def set_target(new_target):
     available_target_list = get_target_list()
-    if new_target != '':
-        print 'Setting Target: %s' % new_target.split('@')[0]
+    print 'Setting Target: %s' % new_target.split('@')[0]
 
-        if new_target in available_target_list:
-            globalconf.set('plain', False)
-            link_global_targets()
-            new_target_args = argparse.Namespace(target_or_path=new_target,
-                                                  config=None,
-                                                  target=new_target,
-                                                  set_target=new_target,
-                                                  save_global=False,
-                                                  no_install=False)
-            target.execCommand(new_target_args, '')
-            link_std_modules()
-            link_mounted_modules()
-            print '\nTarget Successfully Set to: %s' % new_target
+    if new_target in available_target_list:
+        globalconf.set('plain', False)
+        link_global_targets()
+        new_target_args = argparse.Namespace(target_or_path=new_target,
+                                              config=None,
+                                              target=new_target,
+                                              set_target=new_target,
+                                              save_global=False,
+                                              no_install=False)
+        target.execCommand(new_target_args, '')
+        link_std_modules()
+        link_mounted_modules()
+        print '\nTarget Successfully Set to: %s' % new_target
+    else:
+        if new_target != '':
+            print >>sys.stderr, 'Error: Requested target %s not available. Available targets are:\n' % new_target
         else:
-            if new_target != '':
-                print >>sys.stderr, 'Error: Requested target %s not available. Available targets are:\n' % new_target
-            else:
-                print >>sys.stderr, 'Available targets are:\n'
-            for _target in available_target_list:
-                print >>sys.stderr, _target
-            sys.exit(1)
+            print >>sys.stderr, 'Available targets are:\n'
+        for _target in available_target_list:
+            print >>sys.stderr, _target
+        sys.exit(1)
 
 
 def get_target_list():
