@@ -99,7 +99,7 @@ def _init(name):
     with open(module_json, 'w') as final_module_json:
         str_module_data = json.dumps(module_data,
                                      indent=4,
-                                     separators=(':', ','))
+                                     separators=(',', ':'))
         final_module_json.write(str_module_data)
 
 
