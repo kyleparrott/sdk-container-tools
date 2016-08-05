@@ -189,7 +189,6 @@ def link_global_targets():
                                               save_global=False,
                                               no_install=False)
         link_target.execCommand(link_target_args, '')
-    logging.enable(logging.WARNING)
 
 
 def get_current_target():
@@ -215,7 +214,6 @@ def link_std_modules():
                                        config=None,
                                        target=get_current_target())
         link.execCommand(link_args, None)
-    logging.enable(logging.WARNING)
 
 
 def link_mounted_modules(): # Globally link the dev modules to replace the standard modules
