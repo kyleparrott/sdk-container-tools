@@ -99,7 +99,7 @@ def _init(name):
     with open(module_json, 'w') as final_module_json:
         str_module_data = json.dumps(module_data,
                                      indent=4,
-                                     separators=(':', ','))
+                                     separators=(',', ':'))
         final_module_json.write(str_module_data)
 
 
@@ -140,22 +140,24 @@ def show_target():
 
 def set_target(new_target):
     available_target_list = get_target_list()
-    if new_target != '':
-        print 'Setting Target: %s' % new_target.split('@')[0]
+    print 'Setting Target: %s' % new_target.split('@')[0]
 
-        if new_target in available_target_list:
-            globalconf.set('plain', False)
-            link_global_targets()
-            new_target_args = argparse.Namespace(target_or_path=new_target,
-                                                  config=None,
-                                                  target=new_target,
-                                                  set_target=new_target,
-                                                  save_global=False,
-                                                  no_install=False)
-            target.execCommand(new_target_args, '')
-            link_std_modules()
-            link_mounted_modules()
-            print '\nTarget Successfully Set to: %s' % new_target
+    if new_target in available_target_list:
+        globalconf.set('plain', False)
+        link_global_targets()
+        new_target_args = argparse.Namespace(target_or_path=new_target,
+                                              config=None,
+                                              target=new_target,
+                                              set_target=new_target,
+                                              save_global=False,
+                                              no_install=False)
+        target.execCommand(new_target_args, '')
+        link_std_modules()
+        link_mounted_modules()
+        print '\nTarget Successfully Set to: %s' % new_target
+    else:
+        if new_target != '':
+            print >>sys.stderr, 'Error: Requested target %s not available. Available targets are:\n' % new_target
         else:
             if new_target != '':
                 print >>sys.stderr, 'Error: Requested target %s not available. Available targets are:\n' % new_target
@@ -190,7 +192,6 @@ def link_global_targets():
                                               save_global=False,
                                               no_install=False)
         link_target.execCommand(link_target_args, '')
-    logging.enable(logging.WARNING)
 
 
 def get_current_target():
@@ -216,7 +217,6 @@ def link_std_modules():
                                        config=None,
                                        target=get_current_target())
         link.execCommand(link_args, None)
-    logging.enable(logging.WARNING)
 
 
 def link_mounted_modules(): # Globally link the dev modules to replace the standard modules
