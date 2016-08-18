@@ -157,15 +157,11 @@ def set_target(new_target):
         print '\nTarget Successfully Set to: %s' % new_target
     else:
         if new_target != '':
-            print >>sys.stderr, 'Error: Requested target %s not available. Available targets are:\n' % new_target
-        else:
-            if new_target != '':
-                print >>sys.stderr, 'Error: Requested target %s not available. Available targets are:\n' % new_target
-            else:
-                print >>sys.stderr, 'Available targets are:\n'
-            for _target in available_target_list:
-                print >>sys.stderr, _target
-            sys.exit(1)
+            print >>sys.stderr, 'Error: Requested target %s not available.' % new_target
+        print 'Available targets are:\n'
+        for _target in available_target_list:
+            print >>sys.stderr, _target
+        sys.exit(1)
 
 
 def get_target_list():

@@ -1,3 +1,18 @@
+# Kubos SDK
+# Copyright (C) 2016 Kubos Corporation
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
 import argparse
 import imp
 import distutils
@@ -9,6 +24,9 @@ import tempfile
 import unittest
 import yotta
 
+dir_name = os.path.dirname(os.path.abspath(__file__))
+util_file = os.path.join(dir_name, 'utils.py')
+test_utils = imp.load_source('utils', util_file)
 utils = imp.load_source('utils', '/sdk/kubos/test/utils.py')
 kubos = imp.load_source('kubos', '/kubos-sdk/kubos-sdk.py')
 
@@ -25,17 +43,10 @@ yotta_json_template = '''
 }
 '''
 
+class SDKToolsTargetTest(test_utils.ContainerTestCase):
 
-class SDKToolsTargetTest(unittest.TestCase):
-    disco_target = 'stm32f407-disco-gcc'
-
-    def setUp(self):
-        self.stdout = sys.stdout
-        self.stderr = sys.stderr
-        sys.stdout = sys.stderr = open(os.devnull, 'w')
-        self.base_dir = tempfile.mkdtemp()
-        self.test_dir = os.path.join(self.base_dir, 'test-case')
-        shutil.copytree('/examples/kubos-rt-example', self.test_dir, ignore=shutil.ignore_patterns('.git'))
+    def _setUp(self):
+        test_utils.copy_example(self.test_dir)
         os.chdir(self.test_dir)
         kubos.link_global_targets()
         yotta.target.execCommand = mock.MagicMock()
@@ -43,8 +54,8 @@ class SDKToolsTargetTest(unittest.TestCase):
 
 
     def setup_set_target(self):
-        new_target = self.disco_target
-        source_dir = '/usr/local/lib/yotta_targets/stm32f407-disco-gcc'
+        new_target = test_utils.disco_target
+        source_dir = os.path.join('/', 'usr', 'local', 'lib', 'yotta_targets', 'stm32f407-disco-gcc')
         dest_dir = os.path.join(self.test_dir, 'yotta_targets', 'target-stm32f407-disco-gcc')
         shutil.copytree(source_dir, dest_dir, ignore=shutil.ignore_patterns('.git'))
         with open(os.path.join(self.test_dir, '.yotta.json'), 'w') as yotta_json:
@@ -57,7 +68,7 @@ class SDKToolsTargetTest(unittest.TestCase):
 
 
     def test_show_target(self):
-        search_dict = {'target': self.disco_target,
+        search_dict = {'target': test_utils.disco_target,
                        'set_target': None}
         self.setup_set_target()
         kubos.show_target()
@@ -68,20 +79,13 @@ class SDKToolsTargetTest(unittest.TestCase):
 
     def test_set_target(self):
         new_target = 'msp430f5529-gcc'
-        search_dict = {'taget': new_target,
+        search_dict = {'target': new_target,
                        'set_target': new_target}
         self.setup_set_target()
         kubos.set_target(new_target)
         yotta.target.execCommand.assert_called()
         call_dict = utils.get_arg_dict(yotta.target.execCommand.call_args_list)
         self.assertTrue(search_dict <= call_dict)
-
-
-    def tearDown(self):
-        shutil.rmtree(self.test_dir)
-        sys.stdout = self.stdout
-        sys.stderr = self.stderr
-
 
 
 if __name__ == '__main__':

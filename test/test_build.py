@@ -9,18 +9,16 @@ import tempfile
 import unittest
 import yotta
 
+dir_name = os.path.dirname(os.path.abspath(__file__))
+util_file = os.path.join(dir_name, 'utils.py')
+test_utils = imp.load_source('utils', util_file)
 utils = imp.load_source('utils', '/sdk/kubos/test/utils.py')
 kubos = imp.load_source('kubos', '/kubos-sdk/kubos-sdk.py')
 
-class SDKToolsBuildTest(unittest.TestCase):
+class SDKToolsBuildTest(test_utils.ContainerTestCase):
     disco_target = 'stm32f407-disco-gcc'
 
-    def setUp(self):
-        self.stdout = sys.stdout
-        self.stderr = sys.stderr
-        sys.stdout = sys.stderr = open(os.devnull, 'w')
-        self.base_dir = tempfile.mkdtemp()
-        self.test_dir = os.path.join(self.base_dir, 'test-case')
+    def _setUp(self):
         shutil.copytree('/examples/kubos-rt-example', self.test_dir, ignore=shutil.ignore_patterns('.git'))
         os.chdir(self.test_dir)
         yotta.build.installAndBuild = mock.MagicMock()
@@ -46,12 +44,6 @@ class SDKToolsBuildTest(unittest.TestCase):
         yotta.build.installAndBuild.assert_called()
         call_dict = utils.get_arg_dict(yotta.build.installAndBuild.call_args_list)
         self.assertTrue(search_dict <= call_dict)
-
-
-    def tearDown(self):
-        shutil.rmtree(self.test_dir)
-        sys.stdout = self.stdout
-        sys.stderr = self.stderr
 
 
 if __name__ == '__main__':

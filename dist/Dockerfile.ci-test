@@ -4,3 +4,5 @@ MAINTAINER kyle@kubos.co
 RUN pip install mock
 
 RUN git clone https://github.com/openkosmosorg/kubos-sdk /sdk
+
+RUN cd /sdk && pip install -e .
