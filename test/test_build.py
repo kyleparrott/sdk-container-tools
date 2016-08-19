@@ -18,7 +18,8 @@ kubos = imp.load_source('kubos', '/kubos-sdk/kubos-sdk.py')
 class SDKToolsBuildTest(test_utils.ContainerTestCase):
     disco_target = 'stm32f407-disco-gcc'
 
-    def _setUp(self):
+    def setUp(self):
+        super(SDKToolsBuildTest, self).setUp()
         shutil.copytree('/examples/kubos-rt-example', self.test_dir, ignore=shutil.ignore_patterns('.git'))
         os.chdir(self.test_dir)
         yotta.build.installAndBuild = mock.MagicMock()
@@ -44,6 +45,9 @@ class SDKToolsBuildTest(test_utils.ContainerTestCase):
         yotta.build.installAndBuild.assert_called()
         call_dict = utils.get_arg_dict(yotta.build.installAndBuild.call_args_list)
         self.assertTrue(search_dict <= call_dict)
+
+    def tearDown(self):
+        super(SDKToolsBuildTest, self).tearDown()
 
 
 if __name__ == '__main__':

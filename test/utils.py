@@ -31,22 +31,12 @@ class ContainerTestCase(unittest.TestCase):
         sys.stdout = sys.stderr = open(os.devnull, 'w')
         self.base_dir = tempfile.mkdtemp()
         self.test_dir = os.path.join(self.base_dir, self.proj_name)
-        self._setUp()
 
 
     def tearDown(self):
         shutil.rmtree(self.base_dir)
         sys.stdout = self.stdout
         sys.stderr = self.stderr
-        self._tearDown()
-
-
-    def _setUp(self):
-        pass
-
-
-    def _tearDown(self):
-        pass
 
 
 def copy_example(dest):

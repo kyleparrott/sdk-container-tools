@@ -30,7 +30,8 @@ kubos = imp.load_source('kubos', '/kubos-sdk/kubos-sdk.py')
 # in the test
 
 class SDKToolsInitTest(test_utils.ContainerTestCase):
-    def _setUp(self):
+    def setUp(self):
+        super(SDKToolsInitTest, self).setUp()
         os.mkdir(self.test_dir)
         os.chdir(self.test_dir)
 

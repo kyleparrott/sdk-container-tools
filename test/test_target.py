@@ -45,7 +45,8 @@ yotta_json_template = '''
 
 class SDKToolsTargetTest(test_utils.ContainerTestCase):
 
-    def _setUp(self):
+    def setUp(self):
+        super(SDKToolsTargetTest, self).setUp()
         test_utils.copy_example(self.test_dir)
         os.chdir(self.test_dir)
         kubos.link_global_targets()
@@ -86,6 +87,9 @@ class SDKToolsTargetTest(test_utils.ContainerTestCase):
         yotta.target.execCommand.assert_called()
         call_dict = utils.get_arg_dict(yotta.target.execCommand.call_args_list)
         self.assertTrue(search_dict <= call_dict)
+
+    def tearDown(self):
+        super(SDKToolsTargetTest, self).tearDown()
 
 
 if __name__ == '__main__':
