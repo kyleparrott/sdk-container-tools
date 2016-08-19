@@ -39,9 +39,14 @@ kubos_rt_branch = '~0.0.1'
 org_name = 'openkosmosorg'
 kubos_rt_full_path = '%s@%s/%s#%s' % (kubos_rt, org_name, kubos_rt, kubos_rt_branch)
 
-yotta_meta_file = '.yotta.json'
-yotta_install_path = '/usr/local/bin/yotta'
+module_key = 'modules'
+target_key = 'targets'
 
+yotta_meta_file = '.yotta.json'
+yotta_install_path = os.path.join('/', 'usr', 'local', 'bin', 'yotta')
+global_target_path  = os.path.join('/', 'usr', 'local', 'lib', 'yotta_targets')
+global_module_path  = os.path.join('/', 'usr', 'local', 'lib', 'yotta_modules')
+local_link_file = '.kubos-link.json'
 target_const = '_show_current_target_'
 
 original_check_value = argparse.ArgumentParser._check_value
@@ -58,6 +63,8 @@ def main():
 
     init_parser.add_argument('proj_name', type=str, nargs=1)
     target_parser.add_argument('target', nargs='?', type=str)
+
+    init_container()
 
     args, unknown_args = parser.parse_known_args()
     provided_args = vars(args)
@@ -77,6 +84,17 @@ def main():
     elif command == 'build':
         _build(unknown_args)
 
+'''
+Because we create a new container for each command run we need to re-initialzie/mount
+the correct modules and targets before running our commands in the container
+'''
+def init_container():
+    if os.path.isfile(local_link_file):
+        link_mounted_targets() # Must be run before passing undefined commands to yotta
+    if get_current_target():
+        link_std_modules()     # These calls require a target to be set
+        link_mounted_modules()
+
 
 def _init(name):
     print 'Initializing project: %s ...' % name
@@ -94,8 +112,8 @@ def _init(name):
     with open(module_json, 'r') as init_module_json:
         module_data = json.load(init_module_json)
     module_data['name'] = name
-    module_data['repository']['url'] = ''
-    module_data['homepage'] = 'https://' # Without this set Yotta prints ugly warning messages
+    module_data['repository']['url'] = 'git://<repository_url>' #These fields print warnings if they're
+    module_data['homepage'] = 'https://<homepage>'              #left empty
     with open(module_json, 'w') as final_module_json:
         str_module_data = json.dumps(module_data,
                                      indent=4,
@@ -166,12 +184,11 @@ def set_target(new_target):
 
 
 def get_target_list():
-    global_target_pth = os.path.join('/', 'usr', 'lib', 'yotta_targets')
-    target_list = os.listdir(global_target_pth)
+    target_list = os.listdir(global_target_path)
     available_target_list = []
 
     for subdir in target_list:
-        target_json = os.path.join(global_target_pth, subdir, 'target.json')
+        target_json = os.path.join(global_target_path, subdir, 'target.json')
         with open(target_json, 'r') as json_file:
             data = json.load(json_file)
             available_target_list.append(data['name'])
@@ -204,9 +221,8 @@ def get_current_target():
 
 def link_std_modules():
     logging.disable(logging.WARNING)
-    root_module_path = os.path.join('/','usr', 'local', 'lib', 'yotta_modules')
-    for subdir in os.listdir(root_module_path):
-        module_json = os.path.join(root_module_path, subdir, 'module.json')
+    for subdir in os.listdir(global_module_path):
+        module_json = os.path.join(global_module_path, subdir, 'module.json')
         with open(module_json, 'r') as json_file:
             data = json.load(json_file)
             module_name = data['name']
@@ -217,21 +233,29 @@ def link_std_modules():
 
 
 def link_mounted_modules(): # Globally link the dev modules to replace the standard modules
+    run_links(link, module_key)
+
+
+def link_mounted_targets():
+    run_links(link_target, target_key)
+
+
+def run_links(link_module, module_or_target_key):
     cur_dir = os.getcwd()
-    link_file = os.path.join(cur_dir, '.kubos-link.json')
-    link_args = argparse.Namespace(module_or_path=None,
-                                   config=None,
-                                   target=None)
-
+    link_file = os.path.join(cur_dir, local_link_file)
     if os.path.isfile(link_file):
-        with open(link_file, 'r') as dev_links:
-            link_data = json.load(dev_links)
-
-        for key in link_data:
-            module_path = link_data[key]
-            os.chdir(module_path)
-            link.execCommand(link_args, None)
-    os.chdir(cur_dir)
+        link_args = argparse.Namespace(module_or_path=None,
+                                       target_or_path=None,
+                                       config=None,
+                                       target=None)
+        with open(link_file, 'r') as links_file:
+            links = json.load(links_file)
+            linked_data = links[module_or_target_key]
+        for link_key in linked_data:
+            module_or_target_path = linked_data[link_key]
+            os.chdir(module_or_target_path)
+            link_module.execCommand(link_args, None)
+        os.chdir(cur_dir)
 
 
 # Temporarily override the argparse error handler that deals with undefined subcommands
