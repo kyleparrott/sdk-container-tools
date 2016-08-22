@@ -1,0 +1,13 @@
+sudo: required
+
+language: python
+
+services:
+    - docker
+
+before_install:
+    - docker build -t kubostech/kubos-sdk -f $(pwd)/dist/Dockerfile dist/
+    - docker build -t kubostech/ci-test -f $(pwd)/dist/Dockerfile.ci-test dist/
+
+script:
+    - ./run_tests.sh
