@@ -99,11 +99,10 @@ def init_container():
 def _init(name):
     print 'Initializing project: %s ...' % name
     container_source_dir = os.path.join('/', 'examples', 'kubos-rt-example')
-    local_source_dir = os.path.join(os.getcwd(), 'source')
     proj_name_dir = os.path.join(os.getcwd(), name)
 
-    if os.path.isdir(local_source_dir):
-        print >>sys.stderr, 'Source directory already exists. Not overwritting the current directory'
+    if os.path.isdir(proj_name_dir):
+        print >>sys.stderr, 'The project directory %s already exists. Not overwritting the current directory' % proj_name_dir
         sys.exit(1)
 
     shutil.copytree(container_source_dir, proj_name_dir, ignore=shutil.ignore_patterns('.git'))
