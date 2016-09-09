@@ -1,7 +1,7 @@
 FROM kubostech/build:latest
 MAINTAINER kyle@kubos.co
 
-RUN git clone https://github.com/openkosmosorg/sdk-container-tools /kubos-sdk
+RUN git clone https://github.com/kubostech/sdk-container-tools /kubos-sdk
 
 RUN python /kubos-sdk/dist/gather.py
 
