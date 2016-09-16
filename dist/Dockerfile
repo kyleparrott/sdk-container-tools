@@ -15,13 +15,9 @@ RUN curl -o /usr/local/bin/gosu -SL "https://github.com/tianon/gosu/releases/dow
 
 COPY entrypoint.sh /usr/local/bin/entrypoint.sh
 
-RUN git clone https://github.com/openkosmosorg/sdk-container-tools /kubos-sdk
+RUN git clone https://github.com/kubostech/sdk-container-tools /kubos-sdk
 
-RUN cd /kubos-sdk && git checkout v0.1.1
-
-RUN cd /kubos-sdk/dist && ./repo init -u git://github.com/openkosmosorg/kubos-manifest -m docker-manifest.xml -b refs/tags/v0.1.1
-
-RUN cd /kubos-sdk/dist && ./repo sync
+RUN python /kubos-sdk/dist/gather.py
 
 RUN mv /kubos-sdk/dist/yotta_modules /usr/lib/yotta_modules
 
