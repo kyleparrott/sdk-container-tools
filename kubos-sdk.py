@@ -194,7 +194,7 @@ def get_target_list():
 
 
 def link_global_targets():
-    logging.disable(logging.WARNING)
+    logging.disable(logging.ERROR)
     target_list = get_target_list()
     for linked_target in target_list:
         link_target_args = argparse.Namespace(target_or_path=linked_target,
@@ -218,7 +218,7 @@ def get_current_target():
 
 
 def link_std_modules():
-    logging.disable(logging.WARNING)
+    logging.disable(logging.ERROR)
     for subdir in os.listdir(global_module_path):
         module_json = os.path.join(global_module_path, subdir, 'module.json')
         with open(module_json, 'r') as json_file:

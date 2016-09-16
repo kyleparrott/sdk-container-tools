@@ -1,4 +1,5 @@
-FROM kubostech/build:latest
+FROM kubostech/sdk-base:latest
+
 MAINTAINER kyle@kubos.co
 
 RUN git clone https://github.com/openkosmosorg/sdk-container-tools /kubos-sdk
