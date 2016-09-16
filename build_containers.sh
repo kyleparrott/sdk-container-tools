@@ -4,9 +4,6 @@
 default_tag="latest"
 container_repo="kubostech/kubos-sdk"
 
-echo "Building kubostech/sdk-base container..."
-docker build -t kubostech/sdk-base -f dist/Dockerfile.sdkbase dist/
-
 echo "Building $container_repo:$default_tag..."
 docker build -t kubostech/kubos-sdk:$default_tag -f dist/Dockerfile dist/
 
