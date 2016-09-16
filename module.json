@@ -1,0 +1,8 @@
+{
+    "name": "sdk-container-tools",
+    "version": "0.1.1",
+    "description": "Kubos SDK Container Tools",
+    "author": "Kubos",
+    "author_email": "kyle@kubos.co",
+    "url": "http://github.com/kubostech/sdk-container-tools"
+}
